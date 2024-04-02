@@ -19,12 +19,11 @@ const stripe = new Stripe(STRIPE_API_KEY, {
   apiVersion: '2023-10-16',
 })
 
-const ProductDetailView = ({userContext, environment}: ExtensionContextValue) => {
+const ProductDetailView = ({environment}: ExtensionContextValue) => {
 
   const [shown, setShown] = useState<boolean>(true);
   const [metadata, setMetadata] = useState<object>({});
   const [product, setProduct] = useState<object>({});
-  const [productId, setProductId] = useState<string>("");
   const [productUrl, setProductUrl] = useState<string>("/products");
   const [isVariant, setIsVariant] = useState<boolean>(false);
   const [price, setPrice] = useState<object>({});
@@ -36,7 +35,6 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
   useEffect(() => {
     const getProductData = async (product_id: string) => {
       try {
-        setProductId(product_id)
         if (variants.length) return;
         const productData = await stripe.products.retrieve(product_id, {
           expand: ['default_price'],
@@ -93,11 +91,21 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
     }
   }
 
+  const removeNullValues = (variantData: any) => {
+    Object.keys(variantData).forEach((k) => {
+      if (variantData[k] && typeof variantData[k] === "object") {
+        variantData[k] = removeNullValues(variantData[k])
+      } else if (!variantData[k]) {
+        delete variantData[k]
+      }
+    });
+    return variantData;
+  }
+
   const saveVariations = async () => {
     try {
       setShown(false);
-      console.log(product);
-      const variantData = {
+      const variantData = removeNullValues({
         currency: price.currency,
         unit_amount: price.unit_amount,
         product_data: {
@@ -105,9 +113,8 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
           name: product.name,
           description: product.description || ""
         },
-      }
-      if (variantData.product_data.description.length === 0) delete variantData.product_data.description;
-      if (price.recurring) variantData.recurring = price.recurring;
+        recurring: price.recurring
+      });
       const newPrice = await stripe.prices.create(variantData);
       showToast("Product added", {type: "success"});
       setProductEditUrl(`https://${location.hostname}${productUrl}/${newPrice.product}?edit=${newPrice.product}&source=product_detail`);
