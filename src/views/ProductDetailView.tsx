@@ -2,16 +2,10 @@ import { useEffect, useState } from "react";
 import { 
   Box, 
   Button, 
-  ContextView, 
   Divider, 
   Icon, 
-  Img, 
-  Inline, 
+  Inline,
   Link, 
-  List, 
-  ListItem, 
-  Spinner, 
-  TextField 
 } from "@stripe/ui-extension-sdk/ui";
 import { showToast } from '@stripe/ui-extension-sdk/utils';
 import type { ExtensionContextValue } from "@stripe/ui-extension-sdk/context";
@@ -30,6 +24,7 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
   const [shown, setShown] = useState<boolean>(true);
   const [metadata, setMetadata] = useState<object>({});
   const [product, setProduct] = useState<object>({});
+  const [productId, setProductId] = useState<string>("");
   const [productUrl, setProductUrl] = useState<string>("/products");
   const [isVariant, setIsVariant] = useState<boolean>(false);
   const [price, setPrice] = useState<object>({});
@@ -41,6 +36,8 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
   useEffect(() => {
     const getProductData = async (product_id: string) => {
       try {
+        setProductId(product_id)
+        if (variants.length) return;
         const productData = await stripe.products.retrieve(product_id, {
           expand: ['default_price'],
         });
@@ -64,16 +61,15 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
             parentProduct: product_id
           }
         }));
-        const variants = await stripe.products.search({
+        const newVariants = await stripe.products.search({
           query: 'active:\'true\' AND metadata[\'parentProduct\']:\'' + product_id + '\''
         });
-        console.log(variants);
-        setVariants(variants.data);
+        setVariants(newVariants.data);
       } catch (error) {
         console.log(error);
       }
     };
-    getProductData(product_id);
+    if (!variants.length) getProductData(product_id);
   }, [product_id]);
 
   const deleteVariant = async (variant_id: string, index: number) => {
@@ -85,8 +81,10 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
         }
       );
       if (product) {
+        setShown(false);
         const variantObjects = variants;
         variantObjects.splice(index, 1);
+        setShown(true);
         showToast("Product archived", {type: "success"});
       }
     } catch (error) {
@@ -145,7 +143,7 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
                 <Box css={{ 
                   marginBottom: "large" 
                 }}>
-                  This product has {variants.length} variants. Add, update and archive each variation individually.
+                  This product has {variants.length} variants. Add, update and archive each Variant individually.
                 </Box>
                 <Box css={{ 
                   font: "heading",
@@ -172,26 +170,28 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
                       <Box css={{
                         width: '8/12'
                       }}>
-                        <Link 
-                          href={productUrl + "/" + variant.id}
-                          key={variant.id}
-                        >
-                          <Box css={{ 
-                            textOverflow: 'ellipsis', 
+                        
+                          <Inline css={{
                             overflow: 'hidden', 
-                            whiteSpace: 'nowrap', 
-                            wordWrap: 'normal',
-                            width: '11/12'
+                            width: '11/12',
                           }}>
-                            {variant?.name}
-                          </Box>
-                        </Link>
+                            <Link 
+                              href={productUrl + "/" + variant.id}
+                              key={variant.id}
+                            >
+                              {variant?.name}
+                            </Link>
+                          </Inline>
                         <Box>
                           Description: {variant?.description}
                         </Box>
                       </Box>
                       <Box css={{width: '1/12', padding: 'medium'}}>
-                        <Button href={"https://" + location.hostname + productUrl + '/' + variant.id} type="primary">
+                        <Button 
+                          onPress={() => setIsVariant(true)}
+                          href={`https://${location.hostname}${productUrl}/${variant.id}?edit=${variant.id}&source=product_detail`} 
+                          type="primary"
+                        >
                         <Icon name="edit" />
                         </Button>
                       </Box>
@@ -231,6 +231,7 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
                   >
                     <Button 
                       type="primary"
+                      onPress={() => setIsVariant(true)}
                       href={productEditUrl}>Edit New Variant
                     </Button>
                   </Box>
@@ -252,7 +253,7 @@ const ProductDetailView = ({userContext, environment}: ExtensionContextValue) =>
               <Box css={{ 
                 marginBottom: "large" 
               }}>
-                This product is a variant. Add additional variations to the parent product.
+                This product is a variant. Add additional Variants to the parent product.
               </Box>
               <Button 
                 href={"https://" + location.hostname + productUrl + '/' + metadata?.parentProduct} 

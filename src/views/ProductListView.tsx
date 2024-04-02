@@ -19,7 +19,7 @@ const ProductListView = ({userContext, environment}: ExtensionContextValue) => {
         <Box css={{ 
           marginBottom: "small" 
         }}>
-          Select a product to create variations, (e.g. color, size or material). A product variant is a copy of the base product with a new description and optional sku.
+          Select a product to create variations, (e.g. color, size or material). A product variant is a copy of the base product which you can edit while retaining the relatiuonship.
         </Box>
         <Box css={{ 
           marginBottom: "small" 
