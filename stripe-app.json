@@ -1,0 +1,47 @@
+{
+    "id": "com.frontedgedigital.product-variants",
+    "version": "0.0.1",
+    "name": "Product Variants",
+    "icon": "",
+    "permissions": [
+        {
+            "permission": "secret_write",
+            "purpose": "Allows storing secrets between page reloads"
+        },
+        {
+            "permission": "product_read",
+            "purpose": "Allows the app to get product details."
+        },
+        {
+            "permission": "product_write",
+            "purpose": "Create and update products"
+        },
+        {
+            "permission": "plan_write",
+            "purpose": "Create and update price"
+        }
+    ],
+    "ui_extension": {
+        "views": [
+            {
+            "viewport": "stripe.dashboard.drawer.default",
+            "component": "HomeOverviewView"
+            },
+            {
+            "viewport": "stripe.dashboard.product.list",
+            "component": "ProductListView"
+            },
+            {
+            "viewport": "stripe.dashboard.product.detail",
+            "component": "ProductDetailView"
+            }
+        ],
+        "content_security_policy": {
+            "connect-src": [
+                "https://dashboard.stripe.com/products/*"
+            ],
+            "image-src": null,
+            "purpose": ""
+        }
+    }
+}
